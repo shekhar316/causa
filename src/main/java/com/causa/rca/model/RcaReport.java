@@ -20,40 +20,48 @@ import java.util.List;
  */
 @RegisterForReflection
 public class RcaReport {
-    
+
+    // Box formatting constants
+    private static final int BOX_TOTAL_WIDTH = 86;
+    private static final int BOX_CONTENT_WIDTH = BOX_TOTAL_WIDTH - 2; // Excluding border characters
+    private static final int TITLE_MAX_LENGTH = 76;
+    private static final int CONFIDENCE_LABEL_WIDTH = 60;
+    private static final int MAX_WORD_LENGTH = BOX_CONTENT_WIDTH - 2; // Max length before hard wrapping
+
     /**
      * The title or summary of the RCA report.
      * Provides a concise description of the issue being analyzed.
      */
     public String title;
-    
+
     /**
      * Detailed description of the identified issue.
      * Explains what problem was detected and its impact on the system.
      */
     public String issue;
-    
+
     /**
      * Evidence supporting the root cause analysis.
      * Contains metrics, observations, and data points that led to the conclusion.
      */
     public String evidence;
-    
+
     /**
      * List of relevant log entries that support the analysis.
      * Contains specific log lines or patterns that are pertinent to the issue.
      */
     public List<String> supportedLogs;
-    
+
     /**
      * The proposed solution to remediate the identified issue.
      * Includes actionable steps and recommendations to fix the problem.
      */
     public String proposedSolution;
-    
+
     /**
      * Confidence score of the validation (0.0 to 1.0).
-     * Represents how confident the validation agent is in the analysis and proposed solution.
+     * Represents how confident the validation agent is in the analysis and proposed
+     * solution.
      * Higher values indicate greater confidence in the RCA results.
      */
     public Double validationConfidence;
@@ -82,5 +90,121 @@ public class RcaReport {
         this.supportedLogs = supportedLogs;
         this.proposedSolution = proposedSolution;
         this.validationConfidence = validationConfidence;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n╔════════════════════════════════════════════════════════════════════════════════════╗\n");
+        sb.append("║                           RCA REPORT                                               ║\n");
+        sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+        sb.append(String.format("║ Title: %-" + TITLE_MAX_LENGTH + "s║\n", truncate(title, TITLE_MAX_LENGTH)));
+        sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+        sb.append("║ Issue Description:                                                                 ║\n");
+        appendWrapped(sb, issue, BOX_TOTAL_WIDTH);
+        sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+        sb.append("║ Evidence:                                                                          ║\n");
+        appendWrapped(sb, evidence, BOX_TOTAL_WIDTH);
+        sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+        sb.append("║ Proposed Solution:                                                                 ║\n");
+        appendWrapped(sb, proposedSolution, BOX_TOTAL_WIDTH);
+        if (supportedLogs != null && !supportedLogs.isEmpty()) {
+            sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+            sb.append("║ Supported Logs:                                                                    ║\n");
+            for (String log : supportedLogs) {
+                appendWrapped(sb, "  • " + log, BOX_TOTAL_WIDTH);
+            }
+        }
+        sb.append("╠════════════════════════════════════════════════════════════════════════════════════╣\n");
+        sb.append(String.format("║ Validation Confidence: %-" + CONFIDENCE_LABEL_WIDTH + ".2f║\n",
+                validationConfidence != null ? validationConfidence : 0.0));
+        sb.append("╚════════════════════════════════════════════════════════════════════════════════════╝\n");
+        return sb.toString();
+    }
+
+    private String truncate(String str, int maxLength) {
+        if (str == null)
+            return "";
+        return str.length() > maxLength ? str.substring(0, maxLength - 3) + "..." : str;
+    }
+
+    private void appendWrapped(StringBuilder sb, String text, int width) {
+        // Handle null, empty, or whitespace-only text
+        if (text == null || text.trim().isEmpty()) {
+            StringBuilder naLine = new StringBuilder("║ N/A");
+            while (naLine.length() < width - 1) {
+                naLine.append(" ");
+            }
+            naLine.append("║\n");
+            sb.append(naLine);
+            return;
+        }
+        
+        String[] words = text.split("\\s+");
+        
+        // Handle case where split results in empty array (shouldn't happen with trim check, but defensive)
+        if (words.length == 0) {
+            StringBuilder naLine = new StringBuilder("║ N/A");
+            while (naLine.length() < width - 1) {
+                naLine.append(" ");
+            }
+            naLine.append("║\n");
+            sb.append(naLine);
+            return;
+        }
+        
+        StringBuilder line = new StringBuilder("║ ");
+        for (String word : words) {
+            // Handle extremely long unbroken tokens with hard wrapping
+            if (word.length() > MAX_WORD_LENGTH) {
+                // Flush current line if it has content
+                if (line.length() > 2) {
+                    while (line.length() < width - 1) {
+                        line.append(" ");
+                    }
+                    line.append("║\n");
+                    sb.append(line);
+                    line = new StringBuilder("║ ");
+                }
+                
+                // Hard wrap the long word character by character
+                int pos = 0;
+                while (pos < word.length()) {
+                    int chunkSize = Math.min(MAX_WORD_LENGTH, word.length() - pos);
+                    String chunk = word.substring(pos, pos + chunkSize);
+                    
+                    line.append(chunk);
+                    while (line.length() < width - 1) {
+                        line.append(" ");
+                    }
+                    line.append("║\n");
+                    sb.append(line);
+                    line = new StringBuilder("║ ");
+                    pos += chunkSize;
+                }
+                continue;
+            }
+            
+            // Normal word wrapping
+            if (line.length() + word.length() + 1 >= width - 1) {
+                // Pad the line to width - 1
+                while (line.length() < width - 1) {
+                    line.append(" ");
+                }
+                line.append("║\n");
+                sb.append(line);
+                line = new StringBuilder("║ ");
+            }
+            line.append(word).append(" ");
+        }
+        
+        // Pad and append the last line if it has content
+        if (line.length() > 2) {
+            while (line.length() < width - 1) {
+                line.append(" ");
+            }
+            line.append("║\n");
+            sb.append(line);
+        }
     }
 }

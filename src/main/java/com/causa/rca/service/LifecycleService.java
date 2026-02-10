@@ -52,7 +52,7 @@ public class LifecycleService {
      * system to automatically monitor and analyze pods with specific labels.
      * </p>
      */
-    @Scheduled(every = "${rca.scan.interval}", delayed = "10s")
+    @Scheduled(every = "${rca.scan.interval}", delayed = "2m")
     public void scanWorkloads() {
         LOG.debug("Scheduled workload scan triggered."); // Changed to debug for less verbosity
         workloadScannerService.scanWorkloads();
