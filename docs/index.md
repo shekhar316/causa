@@ -43,12 +43,12 @@ Three specialized AI agents work together to provide comprehensive analysis:
 
 ### 🎯 Dual Operation Modes
 - **MONITORING** - Proactive scheduled scanning of labeled workloads
-- **ALERT_DRIVEN** - Reactive analysis triggered by Prometheus alerts
+- **ALERT_DRIVEN** - Reactive analysis triggered by Prometheus alerts (Default Mode)
 
 ### 📊 Comprehensive Data Collection
-- Prometheus metrics (CPU, memory, network)
+- Prometheus metrics (CPU, memory)
 - Kubernetes events and pod status
-- Container logs (current and previous)
+- Container logs
 - JFR profiling data via Cryostat (optional)
 
 
@@ -68,6 +68,7 @@ Three specialized AI agents work together to provide comprehensive analysis:
    - First model identifies the anomaly type
    - Second model performs deep root cause analysis
    - Third model validates and formats the findings
+   - We can configure to use different models or one model for all three stages
 
 4. **Results** - Analysis results are:
    - Stored in MongoDB for historical tracking
@@ -104,9 +105,11 @@ Causa includes a built-in web dashboard for:
 - Viewing analysis history
 - Filtering by status, namespace, or pod
 - Examining detailed RCA reports
-- Tracking trends over time
 
-Access the dashboard at: `http://<causa-service>:9090/dashboard`
+You can port-forward causa service and access the dashboard at: `http://<causa-service>:9090/dashboard`
+In case of OpenShift, a route will be automatically created for you. Check available routes with `oc get routes`.
+
+[View Dashboard Screenshots →](screenshots.html)
 
 ---
 

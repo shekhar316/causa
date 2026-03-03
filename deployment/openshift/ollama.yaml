@@ -38,11 +38,11 @@ spec:
               value: /ollama
           resources:
             requests:
-              cpu: "12"
-              memory: "14Gi"
+              cpu: "8"
+              memory: "12Gi"
             limits:
-              cpu: "12"
-              memory: "14Gi"
+              cpu: "8"
+              memory: "12Gi"
           volumeMounts:
             - name: ollama-data
               mountPath: /ollama

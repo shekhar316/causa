@@ -2,7 +2,7 @@ name: Build and Deploy Jekyll (docs folder)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "poc"]
   workflow_dispatch:
 
 permissions:

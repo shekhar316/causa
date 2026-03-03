@@ -24,8 +24,6 @@ Causa uses three specialized AI agents that work together to provide accurate, a
 
 **2. Root Cause Analyst**
 - Performs deep reasoning on collected data
-- Enhanced with RAG (Retrieval-Augmented Generation)
-- Accesses knowledge base of runbooks and best practices
 - Generates detailed analysis and fix recommendations
 
 **3. Validation Agent**
@@ -128,7 +126,6 @@ RCA_CLEANUP_SCHEDULE=0 0 2 * * ?
 
 - **List View** - All analyses with key information
 - **Detail View** - Complete analysis reports
-- **Status Indicators** - Visual status representation
 - **Timestamp Tracking** - Creation and update times
 
 ---

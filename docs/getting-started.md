@@ -17,12 +17,12 @@ The fastest way to try Causa is using our automated demo script:
 ### Prerequisites
 
 - Docker installed
-- Kind installed
+- Kind installed (If running locally)
 - `kubectl` installed
-- 16GB RAM available
-- 4 vcpus avialbale
-- 3GB+ space available
-- Internet connection
+- At least 16GB RAM available
+- At lease 8 vcpus available
+- 12GB+ space available
+- Fast internet connection
 
 ### Run the Demo
 
@@ -32,14 +32,14 @@ git clone https://github.com/causaai/causa-demos
 cd causa-demos
 
 # Run the automated setup script
-./kind/demo.sh
+./demo.sh -c [cluster-type: kind|openshift]
 ```
 
 ### What the Demo Includes
 
 The demo script automatically sets up:
 
-✅ **Local Kubernetes Cluster** (Kind)  
+✅ **Local Kubernetes Cluster** (Kind) - If running locally  
 ✅ **Prometheus** - Metrics collection and alerting  
 ✅ **Ollama** - AI model serving  
 ✅ **MongoDB** - Analysis storage  
@@ -60,6 +60,12 @@ kubectl port-forward svc/rca-agent 9090:9090
 
 # Open in browser
 open http://localhost:9090/dashboard
+
+# For Openshift users, route is already pre-configured
+kubectl get route -n default
+
+# Open in browser
+open http://causa-rca-default-route.apps.your-domain.com/dashboard
 ```
 
 ---

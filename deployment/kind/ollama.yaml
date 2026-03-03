@@ -41,8 +41,8 @@ spec:
               cpu: "6"
               memory: "12Gi"
             limits:
-              cpu: "12"
-              memory: "14Gi"
+              cpu: "6"
+              memory: "12Gi"
           volumeMounts:
             - name: ollama-data
               mountPath: /ollama

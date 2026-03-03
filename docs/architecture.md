@@ -10,77 +10,19 @@ Causa RCA is built with a modular, cloud-native architecture designed for Kubern
 
 ---
 
-## System Overview
+## Architecture Diagrams
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                       │
-│                                                             │
-│  ┌──────────────┐         ┌─────────────────┐               │
-│  │  Prometheus  │────────▶│  Alertmanager   │               │
-│  │   Metrics    │         │                 │               │
-│  └──────────────┘         └────────┬────────┘               │
-│                                    │ Webhook                │
-│                                    ▼                        │
-│  ┌─────────────────────────────────────────────────┐        │
-│  │            Causa RCA Agent                      │        │
-│  │                                                 │        │
-│  │  ┌────────────────────────────────────────┐     │        │
-│  │  │      Lifecycle Management              │     │        │
-│  │  │  • StartupService                      │     │        │
-│  │  │  • LifecycleService (MONITORING)       │     │        │
-│  │  │  • WebhookManager (ALERT_DRIVEN)       │     │        │
-│  │  └────────────────────────────────────────┘     │        │
-│  │                    │                            │        │
-│  │                    ▼                            │        │
-│  │  ┌────────────────────────────────────────┐     │        │
-│  │  │      Data Collection Layer             │     │        │
-│  │  │  • PrometheusClient                    │     │        │
-│  │  │  • Kubernetes API                      │     │        │
-│  │  │  • CryostatClient (optional)           │     │        │
-│  │  │  • DataCollectorService                │     │        │
-│  │  └────────────────────────────────────────┘     │        │
-│  │                    │                            │        │
-│  │                    ▼                            │        │
-│  │  ┌────────────────────────────────────────┐     │        │
-│  │  │      AI Analysis Pipeline              │     │        │
-│  │  │                                        │     │        │
-│  │  │  ┌──────────────────────────────┐      │     │        │
-│  │  │  │  1. Anomaly Detector         │      │     │        │
-│  │  │  │     (Model A)                │      │     │        │
-│  │  │  └──────────────────────────────┘      │     │        │
-│  │  │              │                         │     │        │
-│  │  │              ▼                         │     │        │
-│  │  │  ┌──────────────────────────────┐      │     │        │
-│  │  │  │  2. Root Cause Analyst       │      │     │        │
-│  │  │  │     (Model B + RAG)          │      │     │        │
-│  │  │  └──────────────────────────────┘      │     │        │
-│  │  │              │                         │     │        │
-│  │  │              ▼                         │     │        │
-│  │  │  ┌──────────────────────────────┐      │     │        │
-│  │  │  │  3. Validation Agent         │      │     │        │
-│  │  │  │     (Model C)                │      │     │        │
-│  │  │  └──────────────────────────────┘      │     │        │
-│  │  │                                        │     │        │
-│  │  └────────────────────────────────────────┘     │        │
-│  │                    │                            │        │
-│  │                    ▼                            │        │
-│  │  ┌────────────────────────────────────────┐     │        │
-│  │  │      Storage & API Layer               │     │        │
-│  │  │  • MongoDB (Analysis History)          │     │        │
-│  │  │  • REST API                            │     │        │
-│  │  │  • Dashboard                           │     │        │
-│  │  └────────────────────────────────────────┘     │        │
-│  │                                                 │        │
-│  └─────────────────────────────────────────────────┘        │
-│                                                             │
-│  ┌──────────────┐         ┌─────────────────┐               │
-│  │   Ollama     │         │    MongoDB      │               │
-│  │  AI Models   │         │    Database     │               │
-│  └──────────────┘         └─────────────────┘               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Alert-Driven Mode Architecture
+
+![Alert-Driven Mode Architecture](design/alert-mode.png)
+
+The alert-driven mode architecture shows how Causa responds to Prometheus alerts in real-time, triggering analysis only when issues are detected.
+
+### Scanning Mode Architecture
+
+![Scanning Mode Architecture](design/scanning-mode.png)
+
+The scanning mode architecture illustrates the proactive monitoring approach, where Causa continuously scans labeled workloads at configured intervals.
 
 ---
 
