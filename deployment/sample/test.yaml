@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: causa-memory-alerts
+  namespace: openshift-monitoring
+  labels:
+    prometheus: k8s
+    role: alert-rules
+    openshift.io/prometheus-rule-evaluation-scope: leaf-prometheus
+spec:
+  groups:
+  - name: causa-memory-alerts
+    interval: 30s
+    rules:
+    - alert: causa-high-memory
+      expr: |
+        (
+          container_memory_working_set_bytes{
+            namespace=~"chaos|chaos-test",
+            container!="",
+            container!="POD"
+          }
+          /
+          container_spec_memory_limit_bytes{
+            namespace=~"chaos|chaos-test",
+            container!="",
+            container!="POD"
+          } > 0
+        )
+        * 100 > 50
+      labels:
+        severity: critical
+        alertname: causa-high-memory
+      annotations:
+        summary: "High memory usage detected in {{ $labels.namespace }}/{{ $labels.pod }}"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using {{ $value | humanizePercentage }} of its memory limit."
+        namespace: "{{ $labels.namespace }}"
+        pod: "{{ $labels.pod }}"
