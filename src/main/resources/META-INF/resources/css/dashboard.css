@@ -4820,3 +4820,262 @@ button.sub-tab-active {
     color: var(--color-text-secondary);
     line-height: 1.6;
 }
+
+
+/* ============================================
+   RCA OVERVIEW - SIDE BY SIDE LAYOUT
+   ============================================ */
+
+.rca-overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+@media (max-width: 1200px) {
+    .rca-overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Left Column - Main Issue Card */
+.rca-main-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.rca-issue-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    height: 100%;
+}
+
+.rca-header-badges {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.severity-badge.severity-high {
+    background: #fef2f2;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+.severity-badge.severity-medium {
+    background: #fffbeb;
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning);
+}
+
+.severity-badge.severity-low {
+    background: #f0fdf4;
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #eff6ff;
+    color: var(--color-info);
+    border: 1px solid var(--color-info);
+}
+
+.rca-issue-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.4;
+}
+
+.rca-issue-description {
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--spacing-xl);
+    font-size: 0.9375rem;
+}
+
+.rca-subsection-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+/* Affected Services */
+.rca-affected-services {
+    margin-bottom: var(--spacing-lg);
+}
+
+.service-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.service-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Observable Symptoms */
+.rca-observable-symptoms {
+    margin-top: var(--spacing-lg);
+}
+
+.symptoms-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.symptom-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+}
+
+.symptom-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.symptom-text {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+}
+
+/* Right Column - Evidence Card */
+.rca-side-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.rca-evidence-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-md);
+    height: 100%;
+}
+
+.rca-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-divider);
+}
+
+/* Supporting Evidence */
+.rca-evidence-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.evidence-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.evidence-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-success);
+}
+
+.evidence-icon {
+    color: var(--color-success);
+    font-weight: bold;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.evidence-text {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+}
+
+/* Info Box */
+.rca-info-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.info-box-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.info-icon {
+    font-size: 1.25rem;
+    color: var(--color-info);
+}
+
+.info-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.info-text {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}

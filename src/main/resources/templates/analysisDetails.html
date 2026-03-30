@@ -176,72 +176,116 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════════════ -->
-        <!-- ROOT CAUSE ANALYSIS (After Pod Information)                     -->
+        <!-- ROOT CAUSE ANALYSIS - SIDE BY SIDE LAYOUT                       -->
         <!-- ═══════════════════════════════════════════════════════════════ -->
         {#if session.report}
             <!-- Hidden data for clipboard copy -->
             <div id="issue-title-text" style="display:none;">{session.report.title}</div>
             <div id="issue-description-text" style="display:none;">{session.report.issue}</div>
-            {#if session.report.highLevelIssue}
-                <div id="high-level-issue-text" style="display:none;">{session.report.highLevelIssue}</div>
-            {/if}
-            {#if session.report.subLevelIssue}
-                <div id="sub-level-issue-text" style="display:none;">{session.report.subLevelIssue}</div>
-            {/if}
 
-            <section class="details-section" x-data="{ activeRcaTab: 'rca' }">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span>Root Cause Analysis</span>
-                        <button class="btn-copy-icon" onclick="copySection('issue-detected-section')" title="Copy Root Cause Analysis">📋</button>
-                    </h2>
-                </div>
+            <!-- Two Column Layout -->
+            <div class="rca-overview-grid">
                 
-                <!-- Sub-tab navigation for RCA -->
-                <nav class="sub-tab-nav">
-                    <button class="sub-tab-btn" :class="{ 'sub-tab-active': activeRcaTab === 'rca' }" @click="activeRcaTab = 'rca'">
-                        RCA Issue
-                    </button>
-                    {#if session.report.highLevelIssue}
-                        <button class="sub-tab-btn" :class="{ 'sub-tab-active': activeRcaTab === 'highlevel' }" @click="activeRcaTab = 'highlevel'">
-                            High Level Anomaly
-                        </button>
-                    {/if}
-                    {#if session.report.subLevelIssue}
-                        <button class="sub-tab-btn" :class="{ 'sub-tab-active': activeRcaTab === 'detailed' }" @click="activeRcaTab = 'detailed'">
-                            Detailed Issues
-                        </button>
-                    {/if}
-                </nav>
-
-                <!-- RCA Issue Sub-tab -->
-                <div x-show="activeRcaTab === 'rca'" class="sub-tab-content">
-                    <div class="content-box issue-highlight">
-                        <h3 class="issue-title">{session.report.title}</h3>
-                        <div class="issue-description">{session.report.issue}</div>
+                <!-- LEFT COLUMN: Main Issue Details -->
+                <section class="rca-main-column">
+                    <div class="content-box rca-issue-card">
+                        <!-- Severity Badge and Confidence -->
+                        <div class="rca-header-badges">
+                            {#if session.report.severity}
+                                <span class="severity-badge severity-{session.report.severity.toLowerCase()}">
+                                    {session.report.severity}
+                                </span>
+                            {/if}
+                            {#if session.report.confidenceLevel}
+                                <span class="confidence-badge">
+                                    {session.report.confidenceLevel}
+                                </span>
+                            {/if}
+                        </div>
+                        
+                        <!-- Title -->
+                        <h3 class="rca-issue-title">{session.report.title}</h3>
+                        
+                        <!-- Description -->
+                        <div class="rca-issue-description">
+                            {session.report.issue}
+                        </div>
+                        
+                        <!-- Affected Services -->
+                        {#if session.report.affectedServices && !session.report.affectedServices.isEmpty()}
+                            <div class="rca-affected-services">
+                                <h4 class="rca-subsection-title">Affected Services</h4>
+                                <div class="service-tags">
+                                    {#for service in session.report.affectedServices}
+                                        <span class="service-tag">{service}</span>
+                                    {/for}
+                                </div>
+                            </div>
+                        {/if}
+                        
+                        <!-- Observable Symptoms -->
+                        {#if session.report.observableSymptoms && !session.report.observableSymptoms.isEmpty()}
+                            <div class="rca-observable-symptoms">
+                                <h4 class="rca-subsection-title">Observable Symptoms</h4>
+                                <div class="symptoms-list">
+                                    {#for symptom in session.report.observableSymptoms}
+                                        <div class="symptom-item">
+                                            {#if symptom.toLowerCase().contains('user impact')}
+                                                <span class="symptom-icon">⚠️</span>
+                                            {#else if symptom.toLowerCase().contains('oom') || symptom.toLowerCase().contains('kill')}
+                                                <span class="symptom-icon">⚡</span>
+                                            {#else if symptom.toLowerCase().contains('latency') || symptom.toLowerCase().contains('p95')}
+                                                <span class="symptom-icon">📈</span>
+                                            {#else if symptom.toLowerCase().contains('cpu') || symptom.toLowerCase().contains('throttl')}
+                                                <span class="symptom-icon">⚙️</span>
+                                            {#else if symptom.toLowerCase().contains('heap') || symptom.toLowerCase().contains('memory')}
+                                                <span class="symptom-icon">📊</span>
+                                            {#else}
+                                                <span class="symptom-icon">•</span>
+                                            {/if}
+                                            <span class="symptom-text">{symptom}</span>
+                                        </div>
+                                    {/for}
+                                </div>
+                            </div>
+                        {/if}
                     </div>
-                </div>
-
-                <!-- High Level Anomaly Sub-tab -->
-                {#if session.report.highLevelIssue}
-                    <div x-show="activeRcaTab === 'highlevel'" class="sub-tab-content">
-                        <div class="content-box">
-                            <h4 class="issue-level-title">High-Level Anomaly Explanation</h4>
-                            <div class="issue-level-description">{session.report.highLevelIssue}</div>
+                </section>
+                
+                <!-- RIGHT COLUMN: Supporting Evidence -->
+                <section class="rca-side-column">
+                    <div class="content-box rca-evidence-card">
+                        <h3 class="rca-card-title">Root Cause Analysis</h3>
+                        
+                        <!-- Supporting Evidence Section -->
+                        {#if session.report.supportingEvidenceBullets && !session.report.supportingEvidenceBullets.isEmpty()}
+                            <div class="rca-evidence-section">
+                                <h4 class="rca-subsection-title">Supporting Evidence</h4>
+                                <ul class="evidence-list">
+                                    {#for bullet in session.report.supportingEvidenceBullets}
+                                        <li class="evidence-item">
+                                            <span class="evidence-icon">✓</span>
+                                            <span class="evidence-text">{bullet}</span>
+                                        </li>
+                                    {/for}
+                                </ul>
+                            </div>
+                        {/if}
+                        
+                        <!-- Critical Data Captured Note -->
+                        <div class="rca-info-box">
+                            <div class="info-box-header">
+                                <span class="info-icon">ℹ️</span>
+                                <span class="info-title">Critical Data Captured Automatically</span>
+                            </div>
+                            <p class="info-text">
+                                Granular JVM runtime metrics normally buried deep within the JVM were captured at the exact moment of incident—before containers restarted and processes terminated.
+                            </p>
                         </div>
                     </div>
-                {/if}
-
-                <!-- Detailed Issues Sub-tab -->
-                {#if session.report.subLevelIssue}
-                    <div x-show="activeRcaTab === 'detailed'" class="sub-tab-content">
-                        <div class="content-box">
-                            <h4 class="issue-level-title">Detailed Issue Analysis</h4>
-                            <div class="issue-level-description">{session.report.subLevelIssue}</div>
-                        </div>
-                    </div>
-                {/if}
-            </section>
+                </section>
+                
+            </div>
         {/if}
 
     </div>

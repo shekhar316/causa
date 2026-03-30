@@ -21,6 +21,13 @@ public class RcaReport {
     public List<String> validationChecks;
     public List<AssertionItem> assertions;
     public FinalDecision finalDecision;
+    
+    // New fields for structured overview display
+    public String severity;  // e.g., "High", "Medium", "Low"
+    public String confidenceLevel;  // e.g., "94% Confidence"
+    public List<String> supportingEvidenceBullets;  // 2-3 hardcoded structure bullets
+    public List<String> observableSymptoms;  // Impact metrics like "8 OOMKills/hr", "P95 latency 2.4s"
+    public List<String> affectedServices;  // List of affected service names
 
     public RcaReport() {}
 

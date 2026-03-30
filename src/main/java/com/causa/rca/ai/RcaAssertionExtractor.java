@@ -39,7 +39,7 @@ short verifiable statements using the SAME words.
 GOOD EXAMPLE
 
 ROOT_CAUSE:
-"The container heap-oom-prom was killed due to an out-of-memory error."
+"The container <container-name> was killed due to an out-of-memory error."
 
 GOOD ASSERTIONS:
 "Container was killed due to out-of-memory"

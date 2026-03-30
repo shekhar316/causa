@@ -48,7 +48,7 @@ OUTPUT FORMAT
 
 {
  "matchedLogs": [
-   "BackOff restarting failed container heap-oom-prom",
+   "BackOff restarting failed container <container-name>",
    "OOMKilled(137)"
  ],
  "matchType": "direct"
