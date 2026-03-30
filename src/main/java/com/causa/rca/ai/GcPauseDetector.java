@@ -19,7 +19,7 @@ public interface GcPauseDetector {
             ALLOWED OUTPUT TOKENS (EXACT, CASE-SENSITIVE):
                 GC_PAUSE, NO_GC_ISSUE
     
-            CRITICAL OUTPUT RULES:\s
+            CRITICAL OUTPUT RULES:
                 1. Output MUST be structured, NO markdown, NO explanations outside fields
                 2. Return EXACTLY this structure:
                    ANOMALY_TYPE: <ONLY ONE token from above ALLOWED OUTPUT TOKENS>
