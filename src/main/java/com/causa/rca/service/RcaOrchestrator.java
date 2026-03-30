@@ -137,9 +137,10 @@ public class RcaOrchestrator {
                 LOG.info("RAW GC Response: " + gcDetectionRaw);
 
                 // Extract explanation from GC detection response
-                subLevelIssue = gcDetectionRaw;
+                subLevelIssue = extractGcExplanation(gcDetectionRaw);
 
                 LOG.info("Second-stage GC detection result: " + gcAnomalyType);
+                LOG.info("Extracted GC explanation: " + subLevelIssue);
 
                 if ("GC_PAUSE".equalsIgnoreCase(gcAnomalyType)) {
                     anomalyType = "GC_PAUSE";
@@ -153,14 +154,12 @@ public class RcaOrchestrator {
             }
 
             trackingService.recordStageStart(sessionId, "rca_analysis");
+            trackingService.updateStatus(sessionId, AnalysisStatus.ANALYZING_RCA,
+                    "Performing root cause analysis using AI");
 
             String rcaOutput =
                     rootCauseAnalyst.analyzeRootCause(anomalyType, llmContext);
             LOG.info("rca output from  rootCauseAnalyst " +  rcaOutput);
-
-            trackingService.recordStageEnd(sessionId, "rca_analysis");
-
-            trackingService.recordStageStart(sessionId, "validation");
 
             // Extract all fields from RCA Analyst output
             String evidence = extractKeyEvidence(rcaOutput);
@@ -176,6 +175,34 @@ public class RcaOrchestrator {
             LOG.info("Extracted " + supportingEvidenceBullets.size() + " supporting evidence bullets");
             LOG.info("Extracted " + observableSymptoms.size() + " observable symptoms");
             LOG.info("Extracted " + affectedServices.size() + " affected services");
+
+            // Create partial report with RCA results (without validation)
+            Map<String, Object> partialReport = new LinkedHashMap<>();
+            partialReport.put("title", extractRootCauseTitle(rcaOutput));
+            if (null != highLevelIssue)
+                partialReport.put("highLevelIssue", highLevelIssue);
+            if (null != subLevelIssue)
+                partialReport.put("subLevelIssue", subLevelIssue);
+            partialReport.put("issue", extractRootCause(rcaOutput));
+            partialReport.put("evidence", evidence);
+            partialReport.put("supportedLogs", supportedLogs);
+            partialReport.put("severity", severity);
+            partialReport.put("supportingEvidenceBullets", supportingEvidenceBullets);
+            partialReport.put("observableSymptoms", observableSymptoms);
+            partialReport.put("affectedServices", affectedServices);
+            
+            String partialJson = mapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(partialReport);
+            RcaReport partialRcaReport = mapper.readValue(partialJson, RcaReport.class);
+            
+            // Store partial report so UI can show RCA results immediately
+            trackingService.storePartialReport(sessionId, partialRcaReport);
+            
+            trackingService.recordStageEnd(sessionId, "rca_analysis");
+
+            trackingService.recordStageStart(sessionId, "validation");
+            trackingService.updateStatus(sessionId, AnalysisStatus.VALIDATING,
+                    "Validating RCA findings against evidence");
 
             String rcaSection = extractRootCause(rcaOutput);
             LOG.info("rca section sent as input to assertion extractor " +  rcaSection);
@@ -499,7 +526,7 @@ public class RcaOrchestrator {
     private String extractRootCause(String rcaOutput) {
 
         Pattern pattern = Pattern.compile(
-                "(?i)ROOT[_ ]CAUSE\\s*:\\s*(.*?)(?=KEY[_ ]EVIDENCE\\s*:|SUPPORTED[_ ]LOGS\\s*:|$)",
+                "(?i)ROOT[_\\s]CAUSE\\s*:\\s*(.*?)(?=SUPPORTING[_\\s]EVIDENCE\\s*:|KEY[_\\s]EVIDENCE\\s*:|SUPPORTED[_\\s]LOGS\\s*:|$)",
                 Pattern.DOTALL);
 
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -514,6 +541,7 @@ public class RcaOrchestrator {
     /**
      * Extracts the SUPPORTED LOGS section from the RCA Analyst output.
      * Returns a list of log lines that were identified by the RCA Analyst.
+     * Handles both "SUPPORTED_LOGS:" and "Supported Logs:" formats.
      */
     private List<String> extractSupportedLogs(String rcaOutput) {
         List<String> logs = new ArrayList<>();
@@ -522,9 +550,9 @@ public class RcaOrchestrator {
             return logs;
         }
 
-        // Extract SUPPORTED LOGS section
+        // Extract SUPPORTED LOGS section - handle both underscore and space formats
         Pattern pattern = Pattern.compile(
-                "(?i)SUPPORTED[_ ]LOGS\\s*:\\s*(.*?)(?=\\n\\n|$)",
+                "(?i)SUPPORTED[_\\s]LOGS\\s*:\\s*(.*?)(?=\\n\\n|$)",
                 Pattern.DOTALL);
 
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -546,8 +574,8 @@ public class RcaOrchestrator {
                 if (!trimmed.isEmpty()
                     && !trimmed.matches("^[-*•]+$")
                     && trimmed.length() > 10) {
-                    // Remove leading bullets/dashes
-                    trimmed = trimmed.replaceFirst("^[-*•]\\s*", "");
+                    // Remove leading bullets/dashes/numbers
+                    trimmed = trimmed.replaceFirst("^[-*•]\\s*", "").replaceFirst("^\\d+\\.\\s+", "");
                     logs.add(trimmed);
                 }
             }
@@ -560,15 +588,16 @@ public class RcaOrchestrator {
     /**
      * Extracts the KEY EVIDENCE section from the RCA Analyst output.
      * Returns the evidence text that was identified by the RCA Analyst.
+     * Handles both "KEY_EVIDENCE:" and "Key Evidence:" formats.
      */
     private String extractKeyEvidence(String rcaOutput) {
         if (rcaOutput == null || rcaOutput.trim().isEmpty()) {
             return "No evidence available";
         }
 
-        // Extract KEY EVIDENCE section
+        // Extract KEY EVIDENCE section - handle both underscore and space formats
         Pattern pattern = Pattern.compile(
-                "(?i)KEY[_ ]EVIDENCE\\s*:\\s*(.*?)(?=SUPPORTED[_ ]LOGS\\s*:|$)",
+                "(?i)KEY[_\\s]EVIDENCE\\s*:\\s*(.*?)(?=SUPPORTED[_\\s]LOGS\\s*:|$)",
                 Pattern.DOTALL);
 
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -626,6 +655,7 @@ public class RcaOrchestrator {
     
     /**
      * Extracts the SUPPORTING_EVIDENCE bullets from RCA output.
+     * Handles both "SUPPORTING_EVIDENCE:" and "Supporting Evidence:" formats.
      */
     private List<String> extractSupportingEvidenceBullets(String rcaOutput) {
         List<String> bullets = new ArrayList<>();
@@ -634,8 +664,9 @@ public class RcaOrchestrator {
             return bullets;
         }
         
+        // Match both "SUPPORTING_EVIDENCE:" and "Supporting Evidence:" (with or without underscores)
         Pattern pattern = Pattern.compile(
-                "(?i)SUPPORTING_EVIDENCE\\s*:\\s*(.*?)(?=OBSERVABLE_SYMPTOMS\\s*:|KEY_EVIDENCE\\s*:|$)",
+                "(?i)SUPPORTING[_\\s]EVIDENCE\\s*:\\s*(.*?)(?=OBSERVABLE[_\\s]SYMPTOMS\\s*:|AFFECTED[_\\s]SERVICES\\s*:|KEY[_\\s]EVIDENCE\\s*:|SUPPORTED[_\\s]LOGS\\s*:|$)",
                 Pattern.DOTALL);
         
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -646,21 +677,24 @@ public class RcaOrchestrator {
             
             for (String line : lines) {
                 String trimmed = line.trim();
-                // Extract bullet points (lines starting with - or •)
-                if (trimmed.matches("^[-•]\\s+.+")) {
-                    trimmed = trimmed.replaceFirst("^[-•]\\s+", "");
-                    if (trimmed.length() > 10) {
+                // Extract bullet points (lines starting with -, •, or numbers like 1., 2., etc.)
+                if (trimmed.matches("^[-•]\\s+.+") || trimmed.matches("^\\d+\\.\\s+.+")) {
+                    // Remove bullet markers (-, •, or 1., 2., etc.)
+                    trimmed = trimmed.replaceFirst("^[-•]\\s+", "").replaceFirst("^\\d+\\.\\s+", "");
+                    if (trimmed.length() > 5) {
                         bullets.add(trimmed);
                     }
                 }
             }
         }
         
+        LOG.info("Extracted " + bullets.size() + " supporting evidence bullets: " + bullets);
         return bullets;
     }
     
     /**
      * Extracts the OBSERVABLE_SYMPTOMS from RCA output.
+     * Handles both "OBSERVABLE_SYMPTOMS:" and "Observable Symptoms:" formats.
      */
     private List<String> extractObservableSymptoms(String rcaOutput) {
         List<String> symptoms = new ArrayList<>();
@@ -669,8 +703,9 @@ public class RcaOrchestrator {
             return symptoms;
         }
         
+        // Match both "OBSERVABLE_SYMPTOMS:" and "Observable Symptoms:" (with or without underscores)
         Pattern pattern = Pattern.compile(
-                "(?i)OBSERVABLE_SYMPTOMS\\s*:\\s*(.*?)(?=AFFECTED_SERVICES\\s*:|KEY_EVIDENCE\\s*:|$)",
+                "(?i)OBSERVABLE[_\\s]SYMPTOMS\\s*:\\s*(.*?)(?=AFFECTED[_\\s]SERVICES\\s*:|KEY[_\\s]EVIDENCE\\s*:|SUPPORTED[_\\s]LOGS\\s*:|$)",
                 Pattern.DOTALL);
         
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -681,21 +716,36 @@ public class RcaOrchestrator {
             
             for (String line : lines) {
                 String trimmed = line.trim();
-                // Extract bullet points or lines with metrics
-                if (trimmed.matches("^[-•]\\s+.+") || trimmed.contains(":")) {
-                    trimmed = trimmed.replaceFirst("^[-•]\\s+", "");
-                    if (trimmed.length() > 5) {
+                
+                // Skip empty lines
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                
+                // Extract lines with bullet markers (-, •, or numbers like 1., 2., etc.)
+                if (trimmed.matches("^[-•]\\s+.+") || trimmed.matches("^\\d+\\.\\s+.+")) {
+                    // Remove bullet markers
+                    trimmed = trimmed.replaceFirst("^[-•]\\s+", "").replaceFirst("^\\d+\\.\\s+", "");
+                    if (trimmed.length() > 3) {
+                        symptoms.add(trimmed);
+                    }
+                }
+                // Also extract lines that start with "User Impact:", "Metric", or contain ":" (key-value format)
+                else if (trimmed.matches("^(?i)(User Impact|Metric \\d+|[A-Za-z][^:]{2,30}):\\s*.+")) {
+                    if (trimmed.length() > 3) {
                         symptoms.add(trimmed);
                     }
                 }
             }
         }
         
+        LOG.info("Extracted " + symptoms.size() + " observable symptoms: " + symptoms);
         return symptoms;
     }
     
     /**
      * Extracts the AFFECTED_SERVICES from RCA output.
+     * Handles both "AFFECTED_SERVICES:" and "Affected Services:" formats.
      */
     private List<String> extractAffectedServices(String rcaOutput) {
         List<String> services = new ArrayList<>();
@@ -704,8 +754,9 @@ public class RcaOrchestrator {
             return services;
         }
         
+        // Match both "AFFECTED_SERVICES:" and "Affected Services:" (with or without underscores)
         Pattern pattern = Pattern.compile(
-                "(?i)AFFECTED_SERVICES\\s*:\\s*(.*?)(?=\\n\\n|KEY_EVIDENCE\\s*:|$)",
+                "(?i)AFFECTED[_\\s]SERVICES\\s*:\\s*(.*?)(?=\\n\\n|KEY[_\\s]EVIDENCE\\s*:|$)",
                 Pattern.DOTALL);
         
         Matcher matcher = pattern.matcher(rcaOutput);
@@ -722,6 +773,7 @@ public class RcaOrchestrator {
             }
         }
         
+        LOG.info("Extracted " + services.size() + " affected services: " + services);
         return services;
     }
 
@@ -757,6 +809,43 @@ public class RcaOrchestrator {
         // If no pattern matches, return the full response cleaned up
         String cleaned = rawResponse
             .replaceAll("(?i)(HIGH_MEMORY|GC_PAUSE|OOM_KILLED|CPU_THROTTLING|CRASH_LOOP|IMAGE_PULL_BACKOFF|NO_GC_ISSUE|HEALTHY|OTHERS)\\s*[:\\-]?\\s*", "")
+            .trim();
+        
+        return cleaned.isEmpty() ? rawResponse.trim() : cleaned;
+    }
+
+    /**
+     * Extracts the explanation/description from the GC detection raw response.
+     * Looks for patterns like "EXPLANATION:" or descriptive text after GC_PAUSE or NO_GC_ISSUE.
+     */
+    private String extractGcExplanation(String rawResponse) {
+        if (rawResponse == null || rawResponse.trim().isEmpty()) {
+            return "No GC explanation available";
+        }
+
+        // Try to extract EXPLANATION: section
+        Pattern explanationPattern = Pattern.compile(
+            "(?i)EXPLANATION\\s*:\\s*(.*?)(?=\\n\\n|$)",
+            Pattern.DOTALL
+        );
+        Matcher explanationMatcher = explanationPattern.matcher(rawResponse);
+        if (explanationMatcher.find()) {
+            return explanationMatcher.group(1).trim();
+        }
+
+        // Try to extract text after GC anomaly type (e.g., "GC_PAUSE: The garbage collection...")
+        Pattern afterTypePattern = Pattern.compile(
+            "(?i)(?:GC_PAUSE|NO_GC_ISSUE)\\s*[:\\-]\\s*(.*?)(?=\\n\\n|$)",
+            Pattern.DOTALL
+        );
+        Matcher afterTypeMatcher = afterTypePattern.matcher(rawResponse);
+        if (afterTypeMatcher.find()) {
+            return afterTypeMatcher.group(1).trim();
+        }
+
+        // If no pattern matches, return the full response cleaned up
+        String cleaned = rawResponse
+            .replaceAll("(?i)(GC_PAUSE|NO_GC_ISSUE|ANOMALY_TYPE)\\s*[:\\-]?\\s*", "")
             .trim();
         
         return cleaned.isEmpty() ? rawResponse.trim() : cleaned;

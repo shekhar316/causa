@@ -4949,12 +4949,97 @@ button.sub-tab-active {
     font-family: 'IBM Plex Mono', monospace;
 }
 
+/* Blue Sub-boxes for RCA Analysis */
+.rca-blue-box {
+    background: #e8f4fd;
+    border: 1px solid #0f62fe;
+    border-left: 4px solid #0f62fe;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.rca-blue-box-content {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* Orange Box for High Level Issue (Highlights) */
+.rca-orange-box {
+    background: #ffffff;
+    border: 2px solid #ff832b;
+    border-left: 4px solid #ff832b;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.rca-orange-box-content {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* Blue Box with White Background for RCA Issues */
+.rca-blue-white-box {
+    background: #ffffff;
+    border: 2px solid #0f62fe;
+    border-left: 4px solid #0f62fe;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.rca-blue-white-box-content {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+/* Highlights List - Show bullets */
+.highlights-list {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin: var(--spacing-md) 0;
+}
+
+.highlight-item {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Highlights Text Content - NO bullets, plain paragraphs */
+.highlights-text-content {
+    margin: var(--spacing-md) 0;
+}
+
+.highlight-text-item {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+}
+
+/* Affected Services Box */
+.rca-affected-services-box {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
 /* Observable Symptoms */
 .rca-observable-symptoms {
     margin-top: var(--spacing-lg);
 }
 
 .symptoms-list {
+    list-style: none;
+    padding-left: 0;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -4968,6 +5053,7 @@ button.sub-tab-active {
     background: var(--color-bg-tertiary);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--color-primary);
+    list-style: none;
 }
 
 .symptom-icon {

@@ -52,10 +52,10 @@ public interface RootCauseAnalyst {
                                    - <Third bullet: e.g., "Default -Xmx setting detected (512MB) vs workload requirements">
                                    
                                    OBSERVABLE_SYMPTOMS: <Exactly 3-5 impact metrics from the signals>
-                                   - User Impact: <e.g., "High - 30% requests >2s latency">
-                                   - <Metric 1: e.g., "If there is OOMKilled events, 8 OOMKills/hr">
-                                   - <Metric 2: e.g., "Memory usage was recorded at 90%">
-                                   - <Metric 4: e.g., "Heap >90%">
+                                   - User Impact: <e.g., High - 30% requests >2s latency>
+                                   - Metric 1: <e.g., If there are OOMKilled events, 8 OOMKills/hr>
+                                   - Metric 2: <e.g., Memory usage was recorded at 90%>
+                                   - Metric 3: <e.g., Heap >90%>
                                    
                                    AFFECTED_SERVICES: <Comma-separated list of affected service/container names from signals>
                                    

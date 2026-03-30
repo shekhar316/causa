@@ -237,7 +237,7 @@ function populateDashboardTable(analyses) {
         const row = document.createElement('tr');
         row.className = 'analysis-row';
         
-        const issueTitle = analysis.report?.title || analysis.report?.issue || 'Issue detected';
+        const issueTitle = analysis.report?.highLevelIssue || analysis.report?.title || 'Issue detected';
 
         // Timestamp cell
         const tdTimestamp = document.createElement('td');

@@ -210,6 +210,35 @@ public class AnalysisTrackingService {
     }
 
     /**
+     * Stores a partial RCA report after RCA analysis completes but before validation.
+     * <p>
+     * This allows the UI to display RCA results immediately while validation is still running,
+     * improving user experience by showing progress incrementally.
+     * </p>
+     *
+     * @param sessionId the unique session identifier
+     * @param report the partial RCA report (without validation results)
+     * @return true if update was successful, false if session not found
+     */
+    public boolean storePartialReport(String sessionId, RcaReport report) {
+        Optional<RcaAnalysisSession> optSession = repository.findBySessionId(sessionId);
+
+        if (optSession.isEmpty()) {
+            LOG.warnf("Attempted to store partial report for non-existent session: %s", sessionId);
+            return false;
+        }
+
+        RcaAnalysisSession session = optSession.get();
+        session.report = report;
+        repository.update(session);
+
+        LOG.infof("Stored partial RCA report for session %s (title: %s)",
+                sessionId, report.title);
+
+        return true;
+    }
+
+    /**
      * Marks an analysis session as completed with the final report.
      * <p>
      * Note: No @Transactional annotation needed. MongoDB operations are atomic
