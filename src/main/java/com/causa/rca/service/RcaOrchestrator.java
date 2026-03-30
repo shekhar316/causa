@@ -354,7 +354,7 @@ public class RcaOrchestrator {
                 finalReport.put("highLevelIssue", highLevelIssue);
             if (null != subLevelIssue)
                 finalReport.put("subLevelIssue", subLevelIssue);
-            finalReport.put("issue", issue);
+            finalReport.put("issue", extractRootCause(rcaOutput));
             finalReport.put("evidence", evidence);
             finalReport.put("supportedLogs", supportedLogs);
             finalReport.put("assertions", finalAssertions);
