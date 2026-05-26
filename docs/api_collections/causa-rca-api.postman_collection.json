@@ -1,0 +1,441 @@
+{
+  "info": {
+    "name": "Causa RCA API",
+    "description": "Complete API collection for Causa Root Cause Analysis system. Import this collection into Postman, Insomnia, or any compatible API client.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Analysis Triggers",
+      "item": [
+        {
+          "name": "Trigger Manual Analysis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('sessionId', response.sessionId);",
+                  "    pm.environment.set('sessionId', response.sessionId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"namespace\": \"default\",\n  \"podName\": \"mongodb-75f4fb68b7-2f2xh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "analyze"]
+            },
+            "description": "Triggers an asynchronous RCA analysis for a specific pod. Returns immediately with a session ID that can be used to track progress."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"namespace\": \"default\",\n  \"podName\": \"mongodb-75f4fb68b7-2f2xh\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/analyze",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "analyze"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"6a1560d4dfc3b81763d8ea5b\",\n  \"sessionId\": \"73a2c6f5-01e8-468e-a88d-5652a4479aed\",\n  \"timestamp\": \"2026-05-26T14:29:00.108522\",\n  \"namespace\": \"default\",\n  \"podName\": \"mongodb-75f4fb68b7-2f2xh\",\n  \"status\": \"INITIATED\",\n  \"currentStep\": \"Analysis initiated\",\n  \"progressPercent\": 0.0,\n  \"inProgress\": true,\n  \"completed\": false\n}"
+            }
+          ]
+        },
+        {
+          "name": "Webhook - Prometheus Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"firing\",\n  \"alerts\": [\n    {\n      \"status\": \"firing\",\n      \"labels\": {\n        \"alertname\": \"PodMemoryHigh\",\n        \"namespace\": \"default\",\n        \"pod\": \"mongodb-75f4fb68b7-2f2xh\",\n        \"severity\": \"warning\"\n      },\n      \"annotations\": {\n        \"summary\": \"Pod memory usage is high\",\n        \"description\": \"Memory usage at 85%\"\n      },\n      \"startsAt\": \"2026-05-26T08:00:00Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/webhooks/alerts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "webhooks", "alerts"]
+            },
+            "description": "Receives Prometheus Alertmanager webhooks and triggers RCA analysis for affected pods."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"firing\",\n  \"alerts\": [\n    {\n      \"status\": \"firing\",\n      \"labels\": {\n        \"alertname\": \"PodMemoryHigh\",\n        \"namespace\": \"default\",\n        \"pod\": \"mongodb-75f4fb68b7-2f2xh\",\n        \"severity\": \"warning\"\n      },\n      \"annotations\": {\n        \"summary\": \"Pod memory usage is high\",\n        \"description\": \"Memory usage at 85%\"\n      },\n      \"startsAt\": \"2026-05-26T08:00:00Z\"\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/webhooks/alerts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "webhooks", "alerts"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"totalAlerts\": 1,\n  \"processed\": 1,\n  \"message\": \"Webhook processed\",\n  \"results\": [\n    {\n      \"pod\": \"mongodb-75f4fb68b7-2f2xh\",\n      \"alert\": \"PodMemoryHigh\",\n      \"namespace\": \"default\",\n      \"sessionId\": \"a6ed640d-018c-4561-a943-dc2e68d7ad15\",\n      \"analysisStatus\": \"INITIATED\",\n      \"status\": \"in_progress\"\n    }\n  ],\n  \"errors\": 0,\n  \"skipped\": 0\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Endpoints for triggering RCA analysis manually or via webhooks"
+    },
+    {
+      "name": "Query & Monitoring",
+      "item": [
+        {
+          "name": "List All Analyses (Summary)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics?verbose=false&page=0&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "false",
+                  "description": "Return summary (false) or full details (true)"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based)"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "50",
+                  "description": "Results per page (1-100)"
+                },
+                {
+                  "key": "status",
+                  "value": "COMPLETED",
+                  "description": "Filter by status",
+                  "disabled": true
+                },
+                {
+                  "key": "namespace",
+                  "value": "default",
+                  "description": "Filter by namespace",
+                  "disabled": true
+                },
+                {
+                  "key": "pod",
+                  "value": "my-pod",
+                  "description": "Filter by pod name",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lists all analysis sessions with optional filtering. Use verbose=false for lightweight responses."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Analyses (Verbose)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics?verbose=true&page=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lists all analysis sessions with complete details including artifacts, metrics, and AI reasoning."
+          },
+          "response": []
+        },
+        {
+          "name": "List Analyses - Filtered by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics?status=COMPLETED&verbose=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "COMPLETED",
+                  "description": "INITIATED, IN_PROGRESS, COMPLETED, FAILED"
+                },
+                {
+                  "key": "verbose",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Filter analyses by status"
+          },
+          "response": []
+        },
+        {
+          "name": "List Analyses - Filtered by Namespace",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics?namespace=chaos-test&verbose=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics"],
+              "query": [
+                {
+                  "key": "namespace",
+                  "value": "chaos-test"
+                },
+                {
+                  "key": "verbose",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Filter analyses by Kubernetes namespace"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Analysis (Summary)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics/{{sessionId}}?verbose=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics", "{{sessionId}}"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Get a specific analysis by session ID. Returns summary with essential fields only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Analysis (Verbose)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics/{{sessionId}}?verbose=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics", "{{sessionId}}"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get complete analysis details including all artifacts, metrics, logs, events, and AI reasoning."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Analysis Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics", "stats"]
+            },
+            "description": "Get aggregate statistics: total, in-progress, completed, failed, and healthy analyses."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/diagnostics/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "diagnostics", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"total\": 2,\n  \"inProgress\": 0,\n  \"healthy\": 0,\n  \"completed\": 2,\n  \"failed\": 0\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Diagnostic Issues (Summary)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics/issues?verbose=false&page=0&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics", "issues"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "false"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Lists analyses that identified issues (unhealthy pods). Returns summary by default."
+          },
+          "response": []
+        },
+        {
+          "name": "List Diagnostic Issues (Verbose)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diagnostics/issues?verbose=true&page=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diagnostics", "issues"],
+              "query": [
+                {
+                  "key": "verbose",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lists analyses that identified issues with complete details."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Workloads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workloads",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workloads"]
+            },
+            "description": "Lists all Kubernetes pods across all namespaces with their status and restart counts."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for querying analysis results and monitoring system status"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
+}
