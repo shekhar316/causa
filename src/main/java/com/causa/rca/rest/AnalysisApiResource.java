@@ -4,14 +4,14 @@ import com.causa.rca.clients.KubernetesMcpClient;
 import com.causa.rca.model.RcaAnalysisSession;
 import com.causa.rca.model.AnalysisStatus;
 import com.causa.rca.service.AnalysisTrackingService;
-import com.causa.rca.service.ScannerService;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
@@ -33,7 +33,8 @@ import java.util.Optional;
  * @see AnalysisTrackingService
  * @see RcaAnalysisSession
  */
-@Path("/api")
+@Tag(name = "Diagnosis")
+@Path("/api/v1")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AnalysisApiResource {
@@ -48,12 +49,6 @@ public class AnalysisApiResource {
 
     @Inject
     KubernetesClient kubernetesClient;
-
-    @ConfigProperty(name = "rca.dashboard.page-size", defaultValue = "50")
-    int defaultPageSize;
-    
-    @ConfigProperty(name = "rca.label")
-    String rcaLabel;
     
     /**
      * Lists all analyses with optional filtering and pagination.
@@ -66,19 +61,20 @@ public class AnalysisApiResource {
      * @return list of analyses matching the filters
      */
     @GET
-    @Path("/analyses")
+    @Path("/diagnostics")
+    @Operation(summary = "List RCA analysis sessions")
     public Response listAnalyses(
             @QueryParam("status") String statusParam,
             @QueryParam("namespace") String namespace,
             @QueryParam("pod") String podName,
             @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
+            @QueryParam("pageSize") @DefaultValue("50") int pageSize,
+            @QueryParam("verbose") @DefaultValue("false") boolean verbose) {
         
-        LOG.infof("Listing analyses: status=%s, namespace=%s, pod=%s, page=%d, pageSize=%d",
-                 statusParam, namespace, podName, page, pageSize);
+        LOG.infof("Listing analyses: status=%s, namespace=%s, pod=%s, page=%d, pageSize=%d, verbose=%s",
+                 statusParam, namespace, podName, page, pageSize, verbose);
         
         try {
-            // Parse status if provided
             AnalysisStatus status = null;
             if (statusParam != null && !statusParam.isEmpty()) {
                 try {
@@ -90,7 +86,6 @@ public class AnalysisApiResource {
                 }
             }
             
-            // Validate pagination parameters
             if (page < 0) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of("error", "Page must be >= 0"))
@@ -102,17 +97,25 @@ public class AnalysisApiResource {
                         .build();
             }
             
-            // Get analyses with filters
             List<RcaAnalysisSession> analyses = trackingService.getAnalysesWithFilters(
                 status, namespace, podName, page, pageSize
             );
             
-            // Build response with metadata
             Map<String, Object> response = new HashMap<>();
-            response.put("analyses", analyses);
             response.put("page", page);
             response.put("pageSize", pageSize);
             response.put("count", analyses.size());
+            response.put("verbose", verbose);
+
+            if (verbose) {
+                response.put("analyses", analyses);
+            } else {
+                List<Map<String, Object>> analysisItems = new ArrayList<>();
+                for (RcaAnalysisSession analysis : analyses) {
+                    analysisItems.add(toIssueSummary(analysis));
+                }
+                response.put("analyses", analysisItems);
+            }
             
             return Response.ok(response).build();
             
@@ -131,9 +134,12 @@ public class AnalysisApiResource {
      * @return the analysis session or 404 if not found
      */
     @GET
-    @Path("/analyses/{sessionId}")
-    public Response getAnalysis(@PathParam("sessionId") String sessionId) {
-        LOG.infof("Getting analysis: %s", sessionId);
+    @Path("/diagnostics/{sessionId}")
+    @Operation(summary = "Get a specific RCA analysis session")
+    public Response getAnalysis(
+            @PathParam("sessionId") String sessionId,
+            @QueryParam("verbose") @DefaultValue("true") boolean verbose) {
+        LOG.infof("Getting analysis: %s, verbose=%s", sessionId, verbose);
         
         try {
             Optional<RcaAnalysisSession> session = trackingService.getSession(sessionId);
@@ -143,8 +149,12 @@ public class AnalysisApiResource {
                         .entity(Map.of("error", "Analysis not found: " + sessionId))
                         .build();
             }
-            
-            return Response.ok(session.get()).build();
+
+            if (verbose) {
+                return Response.ok(session.get()).build();
+            }
+
+            return Response.ok(toIssueSummary(session.get())).build();
             
         } catch (Exception e) {
             LOG.error("Error getting analysis " + sessionId, e);
@@ -160,7 +170,8 @@ public class AnalysisApiResource {
      * @return statistics object
      */
     @GET
-    @Path("/analyses/stats")
+    @Path("/diagnostics/stats")
+    @Operation(summary = "Get RCA analysis statistics")
     public Response getStatistics() {
         LOG.info("Getting dashboard statistics");
         
@@ -191,6 +202,7 @@ public class AnalysisApiResource {
      */
     @GET
     @Path("/workloads")
+    @Operation(summary = "List Kubernetes workloads")
     public Response getWorkloads() {
         LOG.info("Fetching all workloads");
         
@@ -238,23 +250,20 @@ public class AnalysisApiResource {
     }
     
     /**
-     * Gets completed unhealthy analyses for the dashboard overview.
-     * Returns only analyses that are completed and have identified issues (not HEALTHY).
-     *
-     * @param page page number (0-based)
-     * @param pageSize number of results per page
-     * @return list of completed unhealthy analyses
+     * Lists diagnostic issues. By default returns a summary projection.
+     * When verbose=true, returns the full original RcaAnalysisSession objects as-is.
      */
     @GET
-    @Path("/analyses/unhealthy")
-    public Response getUnhealthyAnalyses(
+    @Path("/diagnostics/issues")
+    @Operation(summary = "List diagnostic issues with summary-by-default and verbose full-session option")
+    public Response getDiagnosticIssues(
             @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("pageSize") @DefaultValue("50") int pageSize) {
-        
-        LOG.infof("Getting unhealthy analyses: page=%d, pageSize=%d", page, pageSize);
-        
+            @QueryParam("pageSize") @DefaultValue("50") int pageSize,
+            @QueryParam("verbose") @DefaultValue("false") boolean verbose) {
+
+        LOG.infof("Getting diagnostic issues: page=%d, pageSize=%d, verbose=%s", page, pageSize, verbose);
+
         try {
-            // Validate pagination parameters
             if (page < 0) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of("error", "Page must be >= 0"))
@@ -265,26 +274,46 @@ public class AnalysisApiResource {
                         .entity(Map.of("error", "Page size must be between 1 and 100"))
                         .build();
             }
-            
-            // Get unhealthy analyses
+
             List<RcaAnalysisSession> analyses = trackingService.getUnhealthyAnalyses(page, pageSize);
             long totalCount = trackingService.countUnhealthyAnalyses();
-            
-            // Build response with metadata
+
             Map<String, Object> response = new HashMap<>();
-            response.put("analyses", analyses);
             response.put("page", page);
             response.put("pageSize", pageSize);
             response.put("count", analyses.size());
             response.put("total", totalCount);
-            
+            response.put("verbose", verbose);
+
+            if (verbose) {
+                response.put("issues", analyses);
+            } else {
+                List<Map<String, Object>> issues = new ArrayList<>();
+                for (RcaAnalysisSession analysis : analyses) {
+                    issues.add(toIssueSummary(analysis));
+                }
+                response.put("issues", issues);
+            }
+
             return Response.ok(response).build();
-            
+
         } catch (Exception e) {
-            LOG.error("Error getting unhealthy analyses", e);
+            LOG.error("Error getting diagnostic issues", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Failed to retrieve unhealthy analyses: " + e.getMessage()))
+                    .entity(Map.of("error", "Failed to retrieve diagnostic issues: " + e.getMessage()))
                     .build();
         }
+    }
+
+    private Map<String, Object> toIssueSummary(RcaAnalysisSession analysis) {
+        Map<String, Object> issue = new HashMap<>();
+        issue.put("sessionId", analysis.sessionId);
+        issue.put("timestamp", analysis.timestamp);
+        issue.put("namespace", analysis.namespace);
+        issue.put("podName", analysis.podName);
+        issue.put("status", analysis.status);
+        issue.put("title", analysis.report != null ? analysis.report.title : null);
+        issue.put("issue", analysis.report != null ? analysis.report.issue : null);
+        return issue;
     }
 }
